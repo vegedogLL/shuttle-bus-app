@@ -7,4 +7,17 @@ services:
     envVars:
       - key: FLASK_ENV
         value: production
+      - key: POSTGRES_DB
+        value: shuttlebus
+      - key: POSTGRES_USER
+        value: postgres
+      - key: POSTGRES_PASSWORD
+        value: postgres
+      - key: POSTGRES_HOST
+        value: shuttle-bus-db
+      - key: POSTGRES_PORT
+        value: "5432"
+    plan: free
+  - type: postgres
+    name: shuttle-bus-db
     plan: free

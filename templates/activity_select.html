@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Activity</title>
+    <style>
+        body { font-family: "Segoe UI", sans-serif; background: #f5f5f5; padding: 40px;}
+        .container { max-width: 400px; margin: auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 32px;}
+        h2 { text-align: center; margin-bottom: 24px;}
+        .activity-list { display: flex; flex-direction: column; gap: 16px;}
+        .activity-link { display: block; padding: 14px 0; text-align: center; background: #007BFF; color: #fff; border-radius: 6px; font-size: 1.1em; text-decoration: none; transition: background 0.2s;}
+        .activity-link:hover { background: #0056b3;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Select Activity</h2>
+        <div class="activity-list">
+            {% for activity in activities %}
+                <a class="activity-link" href="/{{ activity[1] }}">{{ activity[1] }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

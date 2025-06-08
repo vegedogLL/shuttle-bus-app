@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Select or Create Activity</title>
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background: #f9f9f9;
+            padding: 40px 0 0 0;
+            margin: 0;
+        }
+        .dashboard-title {
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 18px;
+            color: #222;
+            letter-spacing: 1px;
+        }
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+            padding: 32px 28px 36px 28px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 1.3em;
+            color: #007BFF;
+            letter-spacing: 1px;
+        }
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 30px;
+            max-height: 320px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafbfc;
+            padding: 10px 0;
+        }
+        .activity-link {
+            display: block;
+            padding: 14px 0;
+            text-align: center;
+            background: #007BFF;
+            color: #fff;
+            border-radius: 6px;
+            font-size: 1.1em;
+            text-decoration: none;
+            transition: background 0.2s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            letter-spacing: 0.5px;
+        }
+        .activity-link:hover {
+            background: #0056b3;
+        }
+        .create-btn {
+            width: 100%;
+            padding: 14px 0;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+            letter-spacing: 0.5px;
+        }
+        .create-btn:hover {
+            background: #218838;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.3);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #fff;
+            padding: 28px 32px 22px 32px;
+            border-radius: 10px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+            min-width: 260px;
+            position: relative;
+            text-align: center;
+        }
+        .modal-content label {
+            font-weight: bold;
+            font-size: 1.05em;
+        }
+        .modal-content input[type="text"] {
+            width: 90%;
+            margin: 16px 0 18px 0;
+            padding: 9px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+        }
+        .modal-content .modal-actions {
+            text-align: right;
+        }
+        .modal-content button,
+        .modal-content input[type="submit"] {
+            padding: 8px 18px;
+            border-radius: 5px;
+            border: none;
+            font-size: 1em;
+            margin-left: 8px;
+            cursor: pointer;
+        }
+        .modal-content .cancel-btn {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .modal-content .cancel-btn:hover {
+            background: #bbb;
+        }
+        .modal-content .submit-btn {
+            background: #007BFF;
+            color: #fff;
+        }
+        .modal-content .submit-btn:hover {
+            background: #0056b3;
+        }
+        .modal-content .close-x {
+            position: absolute;
+            top: 8px;
+            right: 14px;
+            background: none;
+            border: none;
+            font-size: 22px;
+            color: #888;
+            cursor: pointer;
+        }
+        .modal-content .close-x:hover {
+            color: #007BFF;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 16px 4vw 24px 4vw; }
+            .modal-content { padding: 18px 6vw 16px 6vw; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-title">🚌 Shuttle Bus Request Dashboard</div>
+    <div class="container">
+        <h2>Select Activity to Manage</h2>
+        <div class="activity-list" id="activity-list">
+            {% for activity in activities %}
+                <a class="activity-link" href="/admin/{{ activity[1] }}">{{ activity[1] }}</a>
+            {% endfor %}
+        </div>
+        <button class="create-btn" onclick="openActivityModal()">＋ Create a New Activity</button>
+        <button class="create-btn" style="background:#ababab;color:#333;margin-top:14px;" onclick="openManageModal()">⚙️ Manage Activities</button>
+    </div>
+    <!-- Modal for creating activity -->
+    <div id="activityModal" class="modal">
+        <div class="modal-content">
+            <button class="close-x" onclick="closeActivityModal()">×</button>
+            <form method="POST" action="/admin" style="margin:0;">
+                <label for="activity_name">New Activity Name:</label>
+                <input type="text" name="activity_name" id="activity_name" required autocomplete="off">
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn" onclick="closeActivityModal()">Cancel</button>
+                    <input type="submit" value="Create" class="submit-btn">
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Manage Activities Modal -->
+    <div id="manageModal" class="modal">
+        <div class="modal-content" style="max-width:350px;">
+            <button class="close-x" onclick="closeManageModal()">×</button>
+            <div style="font-weight:bold;font-size:1.1em;margin-bottom:18px;">Manage Activities</div>
+            <div id="manage-activity-list" style="max-height:300px;overflow-y:auto;">
+                {% for activity in activities %}
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+                    <span style="flex:1;text-align:left;">{{ activity[1] }}</span>
+                    <button class="delete-activity-btn" style="background:#e53935;color:#fff;border:none;border-radius:5px;padding:6px 14px;cursor:pointer;font-size:1em;" onclick="confirmDeleteActivity('{{ activity[1] }}')">🗑 Delete</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <!-- 删除活动的隐藏表单 -->
+    <form id="deleteActivityForm" method="POST" action="/delete_activity" style="display:none;">
+        <input type="hidden" name="activity_name" id="delete_activity_name">
+    </form>
+    <!-- 删除活动二次确认弹窗 -->
+    <div id="deleteActivityModal" class="modal">
+        <div class="modal-content">
+            <button class="close-x" onclick="closeDeleteActivityModal()">×</button>
+            <div style="margin-bottom:18px;font-weight:bold;font-size:1.1em;">Confirm Delete</div>
+            <div id="delete-activity-msg" style="margin-bottom:22px;color:#e53935;"></div>
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="closeDeleteActivityModal()">Cancel</button>
+                <button type="button" class="submit-btn" style="background:#e53935;" onclick="submitDeleteActivity()">Delete</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        function openActivityModal() {
+            document.getElementById('activityModal').style.display = 'flex';
+            setTimeout(function() {
+                document.getElementById('activity_name').focus();
+            }, 100);
+        }
+        function closeActivityModal() {
+            document.getElementById('activityModal').style.display = 'none';
+            document.getElementById('activity_name').value = '';
+        }
+        document.getElementById('activityModal').addEventListener('click', function(e){
+            if(e.target === this) closeActivityModal();
+        });
+        function openManageModal() {
+            document.getElementById('manageModal').style.display = 'flex';
+        }
+        function closeManageModal() {
+            document.getElementById('manageModal').style.display = 'none';
+        }
+        document.getElementById('manageModal').addEventListener('click', function(e){
+            if(e.target === this) closeManageModal();
+        });
+
+        let activityToDelete = '';
+        function confirmDeleteActivity(activityName) {
+            activityToDelete = activityName;
+            closeManageModal();
+            document.getElementById('delete-activity-msg').innerText = "Are you sure you want to delete activity: \"" + activityName + "\"? This cannot be undone.";
+            document.getElementById('deleteActivityModal').style.display = 'flex';
+        }
+        function closeDeleteActivityModal() {
+            document.getElementById('deleteActivityModal').style.display = 'none';
+            activityToDelete = '';
+        }
+        function submitDeleteActivity() {
+            if(activityToDelete) {
+                document.getElementById('delete_activity_name').value = activityToDelete;
+                document.getElementById('deleteActivityForm').submit();
+            }
+        }
+        document.getElementById('deleteActivityModal').addEventListener('click', function(e){
+            if(e.target === this) closeDeleteActivityModal();
+        });
+    </script>
+</body>
+</html>

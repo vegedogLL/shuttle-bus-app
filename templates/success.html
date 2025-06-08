@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Submission Successful</title>
+    <style>
+        body {
+            background: #f8f9fa;
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .success-container {
+            background: #fff;
+            padding: 2.5em 2em;
+            border-radius: 12px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+            text-align: center;
+            max-width: 90vw;
+        }
+        .success-container h1 {
+            color: #28a745;
+            margin-bottom: 0.5em;
+            font-size: 2em;
+        }
+        .success-container p {
+            color: #333;
+            font-size: 1.1em;
+            margin-bottom: 1.5em;
+        }
+        .success-container a {
+            display: inline-block;
+            padding: 0.7em 2em;
+            background: #007bff;
+            color: #fff;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+        .success-container a:hover {
+            background: #0056b3;
+        }
+        @media (max-width: 600px) {
+            .success-container {
+                padding: 1.5em 0.5em;
+            }
+            .success-container h1 {
+                font-size: 1.4em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <h1>Submission Successful!</h1>
+        <p>Thank you for your submission. Your shuttle bus request has been recorded.</p>
+        <a href="/{{ activity_name }}">Return to Home</a>
+    </div>
+</body>
+</html>
