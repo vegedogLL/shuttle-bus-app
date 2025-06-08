@@ -6,11 +6,18 @@ import io
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import os
+import urllib.parse
 
 app = Flask(__name__)
 
 # 获取PostgreSQL连接
 def get_db_conn():
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
+        # Render的DATABASE_URL是postgres://，psycopg2要求postgresql://
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+        return psycopg2.connect(db_url)
+    # ...否则用你自己的环境变量...
     return psycopg2.connect(
         dbname=os.environ.get('POSTGRES_DB', 'shuttlebus'),
         user=os.environ.get('POSTGRES_USER', 'postgres'),
