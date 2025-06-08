@@ -17,12 +17,12 @@ def get_db_conn():
         # Render的DATABASE_URL是postgres://，psycopg2要求postgresql://
         db_url = db_url.replace("postgres://", "postgresql://", 1)
         return psycopg2.connect(db_url)
-    # Render平台自动注入POSTGRES_HOST为数据库服务名（如shuttle-bus-db），不要写localhost
+    # 如果没有DATABASE_URL，回退到本地开发环境变量
     return psycopg2.connect(
         dbname=os.environ.get('POSTGRES_DB', 'shuttlebus'),
         user=os.environ.get('POSTGRES_USER', 'postgres'),
         password=os.environ.get('POSTGRES_PASSWORD', 'postgres'),
-        host=os.environ.get('POSTGRES_HOST', 'shuttle-bus-db'),  # 默认值改为shuttle-bus-db
+        host=os.environ.get('POSTGRES_HOST', 'localhost'),  # 本地开发用localhost
         port=os.environ.get('POSTGRES_PORT', '5432')
     )
 
