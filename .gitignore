@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+
+# SQLite database
+data.db
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VSCode
+.vscode/
+
+# Mac
+.DS_Store
+
+# Env
+.env
+.venv/
+venv/
+env/
+ENV/
