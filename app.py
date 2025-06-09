@@ -1,30 +1,17 @@
 from flask import Flask, render_template, request, redirect, send_file, url_for
-import psycopg2
+import sqlite3
 import datetime
 import pandas as pd
 import io
 import qrcode
 from PIL import Image, ImageDraw, ImageFont
 import os
-import urllib.parse
 
 app = Flask(__name__)
 
-# 获取PostgreSQL连接
+# 获取SQLite连接
 def get_db_conn():
-    db_url = os.environ.get('DATABASE_URL')
-    if db_url:
-        # Render的DATABASE_URL是postgres://，psycopg2要求postgresql://
-        db_url = db_url.replace("postgres://", "postgresql://", 1)
-        return psycopg2.connect(db_url)
-    # 如果没有DATABASE_URL，回退到本地开发环境变量
-    return psycopg2.connect(
-        dbname=os.environ.get('POSTGRES_DB', 'shuttlebus'),
-        user=os.environ.get('POSTGRES_USER', 'postgres'),
-        password=os.environ.get('POSTGRES_PASSWORD', 'postgres'),
-        host=os.environ.get('POSTGRES_HOST', 'localhost'),  # 本地开发用localhost
-        port=os.environ.get('POSTGRES_PORT', '5432')
-    )
+    return sqlite3.connect('data.db')
 
 # 初始化数据库
 def init_db():
@@ -32,13 +19,13 @@ def init_db():
     c = conn.cursor()
     c.execute('''
     CREATE TABLE IF NOT EXISTS activities (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE
     )
     ''')
     c.execute('''
     CREATE TABLE IF NOT EXISTS requests (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         country TEXT,
         time TEXT NOT NULL,
         people_count INTEGER NOT NULL,
@@ -67,7 +54,7 @@ def index():
 def form(activity_name):
     conn = get_db_conn()
     c = conn.cursor()
-    c.execute('SELECT id, name FROM activities WHERE name = %s', (activity_name,))
+    c.execute('SELECT id, name FROM activities WHERE name = ?', (activity_name,))
     activity = c.fetchone()
     c.close()
     conn.close()
@@ -81,7 +68,7 @@ def form(activity_name):
 def submit(activity_name):
     conn = get_db_conn()
     c = conn.cursor()
-    c.execute('SELECT id FROM activities WHERE name = %s', (activity_name,))
+    c.execute('SELECT id FROM activities WHERE name = ?', (activity_name,))
     activity = c.fetchone()
     if not activity:
         c.close()
@@ -102,7 +89,7 @@ def submit(activity_name):
     )
     c.execute('''
         INSERT INTO requests (country, time, people_count, direction, comment, submit_time, activity_id)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     ''', data)
     conn.commit()
     c.close()
@@ -116,7 +103,7 @@ def admin_index():
         if name:
             conn = get_db_conn()
             c = conn.cursor()
-            c.execute('INSERT INTO activities (name) VALUES (%s) ON CONFLICT DO NOTHING', (name,))
+            c.execute('INSERT OR IGNORE INTO activities (name) VALUES (?)', (name,))
             conn.commit()
             c.close()
             conn.close()
@@ -134,7 +121,7 @@ def admin(activity_name):
     selected_date = request.args.get('date')
     conn = get_db_conn()
     c = conn.cursor()
-    c.execute('SELECT id, name FROM activities WHERE name = %s', (activity_name,))
+    c.execute('SELECT id, name FROM activities WHERE name = ?', (activity_name,))
     activity = c.fetchone()
     if not activity:
         c.close()
@@ -144,11 +131,11 @@ def admin(activity_name):
     query = '''
         SELECT country, time, people_count, direction, comment, submit_time, id
         FROM requests
-        WHERE activity_id = %s
+        WHERE activity_id = ?
     '''
     params = [activity_id]
     if selected_date:
-        query += ' AND time LIKE %s'
+        query += ' AND time LIKE ?'
         params.append(selected_date + '%')
     query += ' ORDER BY submit_time DESC'
     c.execute(query, params)
@@ -163,12 +150,12 @@ def delete_activity():
     if activity_name:
         conn = get_db_conn()
         c = conn.cursor()
-        c.execute('SELECT id FROM activities WHERE name = %s', (activity_name,))
+        c.execute('SELECT id FROM activities WHERE name = ?', (activity_name,))
         row = c.fetchone()
         if row:
             activity_id = row[0]
-            c.execute('DELETE FROM requests WHERE activity_id = %s', (activity_id,))
-            c.execute('DELETE FROM activities WHERE id = %s', (activity_id,))
+            c.execute('DELETE FROM requests WHERE activity_id = ?', (activity_id,))
+            c.execute('DELETE FROM activities WHERE id = ?', (activity_id,))
         conn.commit()
         c.close()
         conn.close()
@@ -180,7 +167,7 @@ def delete_entries(activity_name):
     if ids:
         conn = get_db_conn()
         c = conn.cursor()
-        query = f"DELETE FROM requests WHERE id IN ({','.join(['%s'] * len(ids))})"
+        query = f"DELETE FROM requests WHERE id IN ({','.join(['?'] * len(ids))})"
         c.execute(query, ids)
         conn.commit()
         c.close()
@@ -200,10 +187,10 @@ def export():
     '''
     params = []
     if selected_activity:
-        query += ' AND activity_id = %s'
+        query += ' AND activity_id = ?'
         params.append(selected_activity)
     if selected_date:
-        query += ' AND DATE(time) = %s'
+        query += ' AND DATE(time) = ?'
         params.append(selected_date)
     query += ' ORDER BY time ASC'
     c.execute(query, params)
