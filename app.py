@@ -176,39 +176,45 @@ def delete_entries(activity_name):
 
 @app.route('/export')
 def export():
-    selected_activity = request.args.get('activity_id')
-    selected_date = request.args.get('date')
-    conn = get_db_conn()
-    c = conn.cursor()
-    query = '''
-        SELECT country, time, people_count, direction, comment, submit_time
-        FROM requests
-        WHERE 1=1
-    '''
-    params = []
-    if selected_activity:
-        query += ' AND activity_id = ?'
-        params.append(selected_activity)
-    if selected_date:
-        query += ' AND DATE(time) = ?'
-        params.append(selected_date)
-    query += ' ORDER BY time ASC'
-    c.execute(query, params)
-    rows = c.fetchall()
-    c.close()
-    conn.close()
-    df = pd.DataFrame(rows, columns=["Country", "Time", "People Count", "Direction", "Comment", "Submitted At"])
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False, sheet_name='Requests')
-    output.seek(0)
-    filename = "shuttle_requests"
-    if selected_activity:
-        filename += f"_activity_{selected_activity}"
-    if selected_date:
-        filename += f"_{selected_date}"
-    filename += ".xlsx"
-    return send_file(output, download_name=filename, as_attachment=True)
+    try:
+        selected_activity = request.args.get('activity_id')
+        selected_date = request.args.get('date')
+        conn = get_db_conn()
+        c = conn.cursor()
+        query = '''
+            SELECT country, time, people_count, direction, comment, submit_time
+            FROM requests
+            WHERE 1=1
+        '''
+        params = []
+        if selected_activity:
+            query += ' AND activity_id = ?'
+            params.append(selected_activity)
+        if selected_date:
+            query += ' AND DATE(time) = ?'
+            params.append(selected_date)
+        query += ' ORDER BY time ASC'
+        c.execute(query, params)
+        rows = c.fetchall()
+        c.close()
+        conn.close()
+        df = pd.DataFrame(rows, columns=["Country", "Time", "People Count", "Direction", "Comment", "Submitted At"])
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Requests')
+        output.seek(0)
+        filename = "shuttle_requests"
+        if selected_activity:
+            filename += f"_activity_{selected_activity}"
+        if selected_date:
+            filename += f"_{selected_date}"
+        filename += ".xlsx"
+        return send_file(output, download_name=filename, as_attachment=True)
+    except Exception as e:
+        import traceback
+        print("Export error:", e)
+        print(traceback.format_exc())
+        return "Export failed: " + str(e), 500
 
 @app.route('/qrcode/<activity_name>')
 def qrcode_img(activity_name):
