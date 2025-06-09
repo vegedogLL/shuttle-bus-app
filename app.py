@@ -181,31 +181,43 @@ def export():
         selected_date = request.args.get('date')
         conn = get_db_conn()
         c = conn.cursor()
+        # 修正：activity_name传递给前端的是活动名，需要先查id
+        activity_id = None
+        if selected_activity:
+            c.execute('SELECT id FROM activities WHERE name = ?', (selected_activity,))
+            row = c.fetchone()
+            if row:
+                activity_id = row[0]
         query = '''
             SELECT country, time, people_count, direction, comment, submit_time
             FROM requests
-            WHERE 1=1
         '''
         params = []
-        if selected_activity:
-            query += ' AND activity_id = ?'
-            params.append(selected_activity)
+        where_clauses = []
+        if activity_id:
+            where_clauses.append('activity_id = ?')
+            params.append(activity_id)
         if selected_date:
-            query += ' AND DATE(time) = ?'
+            where_clauses.append('DATE(time) = ?')
             params.append(selected_date)
+        if where_clauses:
+            query += ' WHERE ' + ' AND '.join(where_clauses)
         query += ' ORDER BY time ASC'
         c.execute(query, params)
         rows = c.fetchall()
         c.close()
         conn.close()
-        df = pd.DataFrame(rows, columns=["Country", "Time", "People Count", "Direction", "Comment", "Submitted At"])
+        if rows:
+            df = pd.DataFrame(rows, columns=["Country", "Time", "People Count", "Direction", "Comment", "Submitted At"])
+        else:
+            df = pd.DataFrame(columns=["Country", "Time", "People Count", "Direction", "Comment", "Submitted At"])
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             df.to_excel(writer, index=False, sheet_name='Requests')
         output.seek(0)
         filename = "shuttle_requests"
         if selected_activity:
-            filename += f"_activity_{selected_activity}"
+            filename += f"_{selected_activity}"
         if selected_date:
             filename += f"_{selected_date}"
         filename += ".xlsx"
@@ -221,10 +233,26 @@ def qrcode_img(activity_name):
     url = request.url_root.rstrip('/') + '/' + activity_name
     img = qrcode.make(url).convert("RGB")
     title = activity_name
-    try:
-        font = ImageFont.truetype("arial.ttf", 22)
-    except:
+
+    # 云端环境通常没有arial.ttf，导致load_default字体很小
+    # 尝试加载常见的字体，否则用默认字体
+    font = None
+    font_size = 22
+    font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",  # Linux常见
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",       # Linux常见
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",       # 备选
+        "arial.ttf"                                              # Windows
+    ]
+    for path in font_paths:
+        try:
+            font = ImageFont.truetype(path, font_size)
+            break
+        except Exception:
+            continue
+    if font is None:
         font = ImageFont.load_default()
+
     draw = ImageDraw.Draw(img)
     if hasattr(draw, "textbbox"):
         bbox = draw.textbbox((0, 0), title, font=font)
